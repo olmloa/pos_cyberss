@@ -35,11 +35,11 @@ watch(
     if (show) {
       if (!props.form.payments || !Object.keys(props.form.payments).length) {
         props.form.payments = [
-          { amount: $decimal(props.form.items.reduce((a, i) => Number($decimal(i.total)) + a, 0)), method: 'Cash', method_data: {} },
+          { amount: $decimal(props.form.items.reduce((a, i) => Number($decimal(i.total)) + a, 0)), method: 'Efectivo', method_data: {} },
         ];
       } else {
         props.form.payments[0].amount = Number(props.form.items.reduce((a, i) => Number($decimal(i.total)) + a, 0));
-        props.form.payments[0].method = 'Cash';
+        props.form.payments[0].method = 'Efectivo';
       }
       calcTotalPaymentsAmount();
     }
@@ -60,10 +60,10 @@ function clearNotes() {
 function addMorePayment() {
   if (!props.form.payments) {
     props.form.payments = [
-      { amount: props.form.items.reduce((a, i) => Number($decimal(i.total)) + a, 0), method: 'Cash', method_data: {} },
+      { amount: props.form.items.reduce((a, i) => Number($decimal(i.total)) + a, 0), method: 'Efectivo', method_data: {} },
     ];
   }
-  props.form.payments = [...props.form.payments, { amount: 0, method: 'Cash', method_data: {} }];
+  props.form.payments = [...props.form.payments, { amount: 0, method: 'Efectivo', method_data: {} }];
 }
 
 function checkPayments(re) {
@@ -72,23 +72,8 @@ function checkPayments(re) {
   }
 
   let payments = props.form.payments.map(p => p);
-  payments = payments.filter(p => p.amount > 0 && p.method != 'Stripe Terminal');
-  payments = payments.filter(p => (p.method == 'Card Terminal' && !p.cc_slip ? false : true));
-
-  payments = payments.filter(p => {
-    if (p.method == 'Gift Card') {
-      if (!p.gift_card) {
-        return false;
-      }
-      if (Number(p.gift_card.balance) < Number(p.amount)) {
-        return false;
-      }
-      if (p.gift_card.customer_id && p.gift_card.customer_id != props.form.customer_id) {
-        return false;
-      }
-    }
-    return true;
-  });
+  payments = payments.filter(p => p.amount > 0);
+  payments = payments.filter(p => (p.method == 'Tarjeta de Credito' && !p.cc_slip ? false : true));
 
   const total_amount = $decimal(payments.reduce((a, p) => a + Number($decimal(p.amount)), 0));
 
@@ -105,31 +90,11 @@ function checkPayments(re) {
 function calcTotalPaymentsAmount(index = null) {
   totalPaymentsAmount.value = checkPayments(true);
   if (index !== null) {
-    const payment = props.form.payments[index];
-    if (payment && payment.method == 'Gift Card') {
-      payment.method_data = { ...payment.method_data, gift_card_no: payment.method_data?.gift_card_no || null };
-    }
+    // No special per-method side effects needed
   }
 }
 
-const checkGiftCard = debounce((e, index) => {
-  if (e.target.value) {
-    axios.get(route('gift_cards.details', e.target.value)).then(res => {
-      props.form.payments[index].gift_card = res.data;
-      if (props.form.payments[index].amount > res.data.balance) {
-        notify({
-          group: 'main',
-          type: 'error',
-          title: 'Error!',
-          text: t('Gift card balance is not enough.'),
-        });
 
-        props.form.payments[index].amount = res.data.balance;
-        calcTotalPaymentsAmount();
-      }
-    });
-  }
-}, 500);
 </script>
 
 <template>
@@ -286,37 +251,16 @@ const checkGiftCard = debounce((e, index) => {
                 :label="$t('Method')"
                 v-model="form.payments[index].method"
                 @change="calcTotalPaymentsAmount(index)"
-                :suggestions="['Cash', 'Gift Card', 'Card Terminal', 'Stripe Terminal', 'Others']"
+                :suggestions="['Efectivo', 'Yappy', 'ACH', 'Clave', 'Tarjeta de Credito']"
               />
             </div>
           </div>
-          <div v-if="form.payments[index]?.method == 'Gift Card'" class="px-6">
-            <Input
-              keyboard
-              :label="$t('Gift Card Number')"
-              @change="calcTotalPaymentsAmount"
-              @input="e => checkGiftCard(e, index)"
-              v-model="form.payments[index].method_data.gift_card_no"
-            />
-            <div
-              v-if="form.payments[index].gift_card && form.payments[index].method_data.gift_card_no"
-              class="mt-3 rounded-md border px-3 py-2 text-sm whitespace-pre-wrap dark:border-gray-700"
-            >
-              <div>{{ $t('Balance Amount') }}: {{ $number(form.payments[index].gift_card.balance) }}</div>
-              <div v-if="form.payments[index].gift_card.customer">
-                {{ $t('Customer') }}: {{ form.payments[index].gift_card.customer?.name }}
-              </div>
-            </div>
-          </div>
-          <div v-if="form.payments[index]?.method == 'Card Terminal'" class="px-6">
+          <div v-if="form.payments[index]?.method == 'Tarjeta de Credito'" class="px-6">
             <CheckBox
               @change="calcTotalPaymentsAmount"
               v-model:checked="form.payments[index].cc_slip"
               :label="$t('I have collected payment & saved receipt')"
             />
-          </div>
-          <div v-if="form.payments[index]?.method == 'Stripe Terminal'" class="px-6 text-sm font-bold text-yellow-500">
-            Work in Progress
           </div>
         </template>
 
