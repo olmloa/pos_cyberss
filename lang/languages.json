@@ -1,0 +1,9 @@
+{
+    "instruction": "App dropdown uses the below available array. Set rtl: true for RTL languages.",
+    "available": [
+        { "value": "ar", "label": "Arabic", "flag": "SA", "rtl": true },
+        { "value": "en", "label": "English", "flag": "US", "rtl": false },
+        { "value": "es", "label": "Spanish", "flag": "ES", "rtl": false },
+        { "value": "fr", "label": "French", "flag": "FR", "rtl": false }
+    ]
+}
