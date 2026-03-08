@@ -208,7 +208,7 @@ function toggleMenu(e, key) {
           <div v-if="menuSection.name == 'separator'" class="flex-1"></div>
           <template v-else-if="menuSection.name == 'support'">
             <div class="flex-1"></div>
-            <div v-if="$page.props.settings.support_links == 1">
+            <div v-if="false">
               <div data-slot="section" class="flex flex-col" :class="page.props.settings.sidebar_dropdown == 1 ? 'gap-0' : 'gap-1'">
                 <h3 v-if="menuSection.heading" class="my-1 px-3 text-xs/6 font-medium text-gray-500 dark:text-gray-400">
                   {{ menuSection.heading }}
